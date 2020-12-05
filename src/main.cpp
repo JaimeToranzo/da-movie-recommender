@@ -6,6 +6,7 @@
 
 #include "movie.hpp"
 
+const std::string TITLE_AKAS = "datasets/title.akas.tsv";
 const std::string TITLE_BASICS = "datasets/title.basics.tsv";
 const std::string TITLE_RATINGS = "datasets/title.ratings.tsv";
 const std::string TITLE_PRINCIPALS = "datasets/title.principals.tsv";
@@ -179,6 +180,41 @@ bool LoadCastNames(std::map<std::string, Movie *> &moviesById)
 
     return true;
 }
+bool LoadLanguages(std::map<std::string, Movie *> &moviesById)
+{
+    std::ifstream file(TITLE_AKAS);
+    if (!file.is_open())
+        return false;
+
+    // nconst:name
+    std::map<std::string, std::string> cast;
+    // Skip the first line
+    std::string line;
+    std::getline(file, line);
+    // File headings:
+    // titleId(0) ordering(1) title(2) region(3) language(4) types(5) attributes(6) isOriginalTitle(7)
+    while (std::getline(file, line))
+    {
+        std::istringstream buffer(line);
+        std::string temp;
+        std::vector<std::string> values;
+
+        std::getline(buffer, temp, '\t');
+        std::string titleId = temp;
+
+        if(moviesById.count(titleId) == 0)
+            continue;
+
+        // Only iterate 3 times so we can get the language
+        for(int i = 0; i < 3; i++)
+            std::getline(buffer, temp, '\t');
+        
+        if(temp != "\\N")
+            moviesById[titleId]->languages.insert(temp);
+    }
+
+    return true;
+}
 
 int main()
 {
@@ -187,6 +223,7 @@ int main()
 
     // Stores a ID:NAME pair, so we can have fast lookups by both names and ID
     std::map<std::string, Movie *> moviesById;
+
 
     std::cout << "Loading database..." << std::endl;
     if (!LoadMovieBasics(moviesByName, moviesById))
@@ -213,6 +250,13 @@ int main()
     if (!LoadCastNames(moviesById))
     {
         std::cout << "Missing file: " << NAME_BASICS << std::endl;
+        return 1;
+    }
+
+    std::cout << "Loading languages..." << std::endl;
+    if (!LoadLanguages(moviesById))
+    {
+        std::cout << "Missing file: " << TITLE_AKAS << std::endl;
         return 1;
     }
 
