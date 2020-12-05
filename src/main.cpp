@@ -55,10 +55,10 @@ bool LoadMovieBasics(std::map<std::string, Movie *> &moviesByName, std::map<std:
         {
             //std::cout << "Potential conflict with title: " << movie->getID() << std::endl;
 
-            // Point the old duplicate to the new movie
+            // Remove the old duplicate from the map
             std::string oldId = moviesByName[movie->getID()]->movieId;
             delete moviesById[oldId];
-            moviesById[oldId] = movie;
+            moviesById.erase(oldId);
         }
             
         moviesByName[movie->getID()] = movie;
@@ -121,6 +121,8 @@ bool LoadCastIds(std::map<std::string, Movie *> &moviesById)
         
         if(values.size() == 0)
             continue;
+        if(values[0] == "tt11123618")
+            std::cout << "aaaa";
 
         // Skip over movies not already added to the map
         if (moviesById.count(values[0]) == 0)
