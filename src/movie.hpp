@@ -10,12 +10,12 @@ public:
     std::string movieId;
     std::string name;
     std::string year;
-    std::string language;
-    
+
     float avgRating;
     int ratings; 
     
     std::vector<std::string> genres;
+    std::vector<std::string> languages;
     std::vector<std::string> directors;
     std::vector<std::string> actors;
     int score = -1; 
