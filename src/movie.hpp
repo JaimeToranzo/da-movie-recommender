@@ -17,7 +17,7 @@ public:
 
     std::vector<Movie> getRecommendations(std::map<std::string, Movie> movies);
     void scoreMovies(std::map<std::string, Movie> movies);
-
+    void print();
     // Returns the ID used as the key to this movie in an std::map
     std::string getID();
 };
