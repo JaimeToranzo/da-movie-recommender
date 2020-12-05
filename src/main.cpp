@@ -3,6 +3,7 @@
 #include <sstream>
 #include <map>
 #include <string>
+#include <chrono>
 
 #include "movie.hpp"
 
@@ -224,7 +225,7 @@ int main()
     // Stores a ID:NAME pair, so we can have fast lookups by both names and ID
     std::map<std::string, Movie *> moviesById;
 
-
+    auto startTime = std::chrono::high_resolution_clock::now();
     std::cout << "Loading database..." << std::endl;
     if (!LoadMovieBasics(moviesByName, moviesById))
     {
@@ -260,6 +261,10 @@ int main()
         return 1;
     }
 
+    auto stopTime = std::chrono::high_resolution_clock::now();
+    auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime);
+    std::cout << "Loading time: " << duration.count() << "ms" << std::endl;
+    
     std::string title;
     std::string year;
 
