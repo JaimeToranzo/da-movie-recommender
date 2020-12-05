@@ -1,11 +1,12 @@
 #include <string>
-#include <vector>
+#include <set>
 #include <map>
+#include <vector>
 
 class Movie
 {
 private:
-    std::string vectorToString(const std::vector<std::string>& vect) const; 
+    std::string setToString(const std::set<std::string>& set) const; 
 public:
     std::string movieId;
     std::string name;
@@ -14,15 +15,15 @@ public:
     float avgRating;
     int ratings; 
     
-    std::vector<std::string> genres;
-    std::vector<std::string> languages;
-    std::vector<std::string> directors;
-    std::vector<std::string> actors;
-    std::vector<std::string> writers;
+    std::set<std::string> genres;
+    std::set<std::string> languages;
+    std::set<std::string> directors;
+    std::set<std::string> actors;
+    std::set<std::string> writers;
 
-    std::vector<std::string> directorIds;
-    std::vector<std::string> actorIds;
-    std::vector<std::string> writerIds;
+    std::set<std::string> directorIds;
+    std::set<std::string> actorIds;
+    std::set<std::string> writerIds;
     int score = -1; 
 
     std::vector<Movie> getRecommendations(std::map<std::string, Movie> movies) const;

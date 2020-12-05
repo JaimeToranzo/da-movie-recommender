@@ -42,7 +42,7 @@ bool LoadMovieBasics(std::map<std::string, Movie *> &moviesByName, std::map<std:
         std::istringstream genreBuffer(values[8]);
         std::string genre;
         while (std::getline(genreBuffer, genre, ','))
-            movie->genres.push_back(genre);
+            movie->genres.insert(genre);
 
         if (values[5] == "\\N")
             movie->year = "UNKNOWN";
@@ -90,6 +90,37 @@ bool LoadRatings(std::map<std::string, Movie *> &moviesById)
         if (moviesById.count(values[0]) == 0)
             continue;
 
+        moviesById[values[0]]->avgRating = std::stof(values[1]);
+        moviesById[values[0]]->ratings = std::stoi(values[2]);
+    }
+
+    return true;
+}
+
+bool LoadCastIds(std::map<std::string, Movie *> &moviesById)
+{
+    std::ifstream file(TITLE_RATINGS);
+    if (!file.is_open())
+        return false;
+
+    // Skip the first line
+    std::string line;
+    std::getline(file, line);
+    // File headings:
+    // tconst(0) averageRating(1) numVotes(2)
+    while (std::getline(file, line))
+    {
+        std::istringstream buffer(line);
+        std::string temp;
+        std::vector<std::string> values;
+
+        while (std::getline(buffer, temp, '\t'))
+            values.push_back(temp);
+        
+        // Skip over movies not already added to the map
+        if (moviesById.count(values[0]) == 0)
+            continue;
+        
         moviesById[values[0]]->avgRating = std::stof(values[1]);
         moviesById[values[0]]->ratings = std::stoi(values[2]);
     }
