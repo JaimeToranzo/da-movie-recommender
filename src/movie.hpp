@@ -18,6 +18,11 @@ public:
     std::vector<std::string> languages;
     std::vector<std::string> directors;
     std::vector<std::string> actors;
+    std::vector<std::string> writers;
+
+    std::vector<std::string> directorIds;
+    std::vector<std::string> actorIds;
+    std::vector<std::string> writerIds;
     int score = -1; 
 
     std::vector<Movie> getRecommendations(std::map<std::string, Movie> movies) const;
