@@ -55,12 +55,12 @@ bool LoadMovieBasics(std::map<std::string, Movie *> &moviesByName, std::map<std:
         {
             //std::cout << "Potential conflict with title: " << movie->getID() << std::endl;
 
-            // Point the old duplicate to the new movie
+            // Remove the old duplicate from the map
             std::string oldId = moviesByName[movie->getID()]->movieId;
             delete moviesById[oldId];
-            moviesById[oldId] = movie;
+            moviesById.erase(oldId);
         }
-            
+
         moviesByName[movie->getID()] = movie;
         moviesById[movie->movieId] = movie;
     }
@@ -87,7 +87,7 @@ bool LoadRatings(std::map<std::string, Movie *> &moviesById)
 
         while (std::getline(buffer, temp, '\t'))
             values.push_back(temp);
-        
+
         // Skip over movies not already added to the map
         if (moviesById.count(values[0]) == 0)
             continue;
@@ -118,20 +118,18 @@ bool LoadCastIds(std::map<std::string, Movie *> &moviesById)
 
         while (std::getline(buffer, temp, '\t'))
             values.push_back(temp);
-        
-        if(values.size() == 0)
-            continue;
 
         // Skip over movies not already added to the map
         if (moviesById.count(values[0]) == 0)
             continue;
-        std::cout << values[0] << " : ";
-        std::cout << values[3] << std::endl;
-        if(values[3] == "actor")
+
+        //std::cout << values[0] << " : " << values[3] << std::endl;
+
+        if (values[3] == "actor")
             moviesById[values[0]]->actorIds.insert(values[2]);
-        else if(values[3] == "director")
+        else if (values[3] == "director")
             moviesById[values[0]]->directorIds.insert(values[2]);
-        else if(values[3] == "writer")
+        else if (values[3] == "writer")
             moviesById[values[0]]->writerIds.insert(values[2]);
     }
 
@@ -156,26 +154,26 @@ bool LoadCastNames(std::map<std::string, Movie *> &moviesById)
         std::istringstream buffer(line);
         std::string temp;
         std::vector<std::string> values;
-        
+
         // Store the first value, the ncount, to use as a key
         std::getline(buffer, temp, '\t');
         std::string nconst = temp;
 
         std::getline(buffer, temp, '\t');
         std::string name = temp;
-        
+
         cast[nconst] = name;
     }
 
-    for(auto movie : moviesById)
+    for (auto movie : moviesById)
     {
-        for(auto id : movie.second->actorIds)
+        for (auto id : movie.second->actorIds)
             movie.second->actors.insert(cast[id]);
 
-        for(auto id : movie.second->directorIds)
+        for (auto id : movie.second->directorIds)
             movie.second->directors.insert(cast[id]);
 
-        for(auto id : movie.second->writerIds)
+        for (auto id : movie.second->writerIds)
             movie.second->writers.insert(cast[id]);
     }
 
