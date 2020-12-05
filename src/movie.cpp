@@ -22,10 +22,10 @@ std::string Movie::vectorToString(const std::vector<std::string>& vect) const
 {
     std::string str; 
 
-    for(size_t i = 0; i < this->genres.size(); i++)
+    for(size_t i = 0; i < vect.size(); i++)
     {
         str += genres[i];
-        if(i != this->genres.size()-1)
+        if(i != vect.size()-1)
             str += ", ";
     }
 
