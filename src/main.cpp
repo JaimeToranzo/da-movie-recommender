@@ -7,8 +7,9 @@
 #include "movie.hpp"
 
 const std::string TITLE_BASICS = "datasets/title.basics.tsv";
+const std::string TITLE_RATINGS = "datasets/title.ratings.tsv";
 
-bool loadMovieBasics(std::map<std::string, Movie *> &movies, std::map<std::string, Movie *> &ids)
+bool LoadMovieBasics(std::map<std::string, Movie *> &moviesByName, std::map<std::string, Movie *> &moviesById)
 {
     std::ifstream file(TITLE_BASICS);
     if (!file.is_open())
@@ -48,14 +49,45 @@ bool loadMovieBasics(std::map<std::string, Movie *> &movies, std::map<std::strin
         else
             movie->year = values[5];
 
-        if (movies.count(movie->getID()) != 0)
+        if (moviesByName.count(movie->getID()) != 0)
         {
             std::cout << "Potential conflict with title: " << movie->getID() << std::endl;
-            delete movies[movie->getID()];
+            delete moviesByName[movie->getID()];
         }
             
-        movies[movie->getID()] = movie;
-        ids[movie->movieId] = movie;
+        moviesByName[movie->getID()] = movie;
+        moviesById[movie->movieId] = movie;
+    }
+
+    return true;
+}
+
+bool LoadRatings(std::map<std::string, Movie *> &moviesById)
+{
+    std::ifstream file(TITLE_RATINGS);
+    if (!file.is_open())
+        return false;
+
+    // Skip the first line
+    std::string line;
+    std::getline(file, line);
+    // File headings:
+    // tconst(0) averageRating(1) numVotes(2)
+    while (std::getline(file, line))
+    {
+        std::istringstream buffer(line);
+        std::string temp;
+        std::vector<std::string> values;
+
+        while (std::getline(buffer, temp, '\t'))
+            values.push_back(temp);
+        
+        // Skip over movies not already added to the map
+        if (moviesById.count(values[0]) == 0)
+            continue;
+
+        moviesById[values[0]]->avgRating = std::stof(values[1]);
+        moviesById[values[0]]->ratings = std::stoi(values[2]);
     }
 
     return true;
@@ -70,9 +102,16 @@ int main()
     std::map<std::string, Movie *> moviesById;
 
     std::cout << "Loading database..." << std::endl;
-    if (!loadMovieBasics(moviesByName, moviesById))
+    if (!LoadMovieBasics(moviesByName, moviesById))
     {
         std::cout << "Missing file: " << TITLE_BASICS << std::endl;
+        return 1;
+    }
+
+    std::cout << "Loading ratings..." << std::endl;
+    if (!LoadRatings(moviesById))
+    {
+        std::cout << "Missing file: " << TITLE_RATINGS << std::endl;
         return 1;
     }
 
@@ -92,6 +131,7 @@ int main()
     }
 
     moviesByName[key]->print();
+    std::string imdbId = moviesByName[key]->movieId;
 
     return 0;
 }
