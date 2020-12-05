@@ -52,7 +52,11 @@ bool LoadMovieBasics(std::map<std::string, Movie *> &moviesByName, std::map<std:
         if (moviesByName.count(movie->getID()) != 0)
         {
             std::cout << "Potential conflict with title: " << movie->getID() << std::endl;
-            delete moviesByName[movie->getID()];
+
+            // Point the old duplicate to the new movie
+            std::string oldId = moviesByName[movie->getID()]->movieId;
+            delete moviesById[oldId];
+            moviesById[oldId] = movie;
         }
             
         moviesByName[movie->getID()] = movie;
