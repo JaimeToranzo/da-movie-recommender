@@ -34,7 +34,7 @@ bool LoadMovieBasics(std::map<std::string, Movie *> &moviesByName, std::map<std:
             values.push_back(temp);
 
         // Don't add this entry if it isn't a movie or is an adult movie
-        if (values[1] != "movie" && values[1] != "tMovie" && values[1] != "short")
+        if (values[1] != "movie" && values[1] != "tvMovie")
             continue;
         if (values[4] == "1")
             continue;
@@ -127,7 +127,7 @@ bool LoadCastIds(std::map<std::string, Movie *> &moviesById)
 
         //std::cout << values[0] << " : " << values[3] << std::endl;
 
-        if (values[3] == "actor")
+        if (values[3] == "actor" || values[3] == "actress")
             moviesById[values[0]]->actorIds.insert(values[2]);
         else if (values[3] == "director")
             moviesById[values[0]]->directorIds.insert(values[2]);
