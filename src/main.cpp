@@ -12,6 +12,7 @@ const std::string TITLE_BASICS = "datasets/title.basics.tsv";
 const std::string TITLE_RATINGS = "datasets/title.ratings.tsv";
 const std::string TITLE_PRINCIPALS = "datasets/title.principals.tsv";
 const std::string NAME_BASICS = "datasets/name.basics.tsv";
+const std::string MASTER_FILE = "datasets/master.tsv";
 
 bool LoadMovieBasics(std::map<std::string, Movie *> &moviesByName, std::map<std::string, Movie *> &moviesById)
 {
@@ -46,7 +47,8 @@ bool LoadMovieBasics(std::map<std::string, Movie *> &moviesByName, std::map<std:
         std::istringstream genreBuffer(values[8]);
         std::string genre;
         while (std::getline(genreBuffer, genre, ','))
-            movie->genres.insert(genre);
+            if (genre != "\\N")
+                movie->genres.insert(genre);
 
         if (values[5] == "\\N")
             movie->year = "UNKNOWN";
@@ -203,15 +205,148 @@ bool LoadLanguages(std::map<std::string, Movie *> &moviesById)
         std::getline(buffer, temp, '\t');
         std::string titleId = temp;
 
-        if(moviesById.count(titleId) == 0)
+        if (moviesById.count(titleId) == 0)
             continue;
 
         // Only iterate 3 times so we can get the language
-        for(int i = 0; i < 3; i++)
+        for (int i = 0; i < 3; i++)
             std::getline(buffer, temp, '\t');
-        
-        if(temp != "\\N")
+
+        if (temp != "\\N")
             moviesById[titleId]->languages.insert(temp);
+    }
+
+    return true;
+}
+
+std::string setToString(const std::set<std::string> &set)
+{
+    std::string str;
+
+    if (set.empty())
+        return "\\N";
+
+    for (auto it = set.begin(); it != set.end(); it++)
+    {
+        str += *it;
+        if (it != --set.end())
+            str += ",";
+    }
+
+    return str;
+}
+
+void MoviesToTsv(std::map<std::string, Movie *> moviesById)
+{
+    std::ofstream ofs;
+    ofs.open("datasets/master.tsv", std::ofstream::out | std::ofstream::trunc);
+
+    ofs << "tconst	name	year	avgrating	ratings	genres	languages	directors	actors	writers	directorids	actorids	writerids" << std::endl;
+    for (auto movie : moviesById)
+    {
+        ofs << movie.second->movieId << '\t';
+        ofs << movie.second->name << '\t';
+        ofs << movie.second->year << '\t';
+        ofs << movie.second->avgRating << '\t';
+        ofs << movie.second->ratings << '\t';
+
+        ofs << setToString(movie.second->genres) << '\t';
+        ofs << setToString(movie.second->languages) << '\t';
+        ofs << setToString(movie.second->directors) << '\t';
+        ofs << setToString(movie.second->actors) << '\t';
+        ofs << setToString(movie.second->writers) << '\t';
+        ofs << setToString(movie.second->directorIds) << '\t';
+        ofs << setToString(movie.second->actorIds) << '\t';
+        ofs << setToString(movie.second->writerIds) << '\t';
+
+        ofs << std::endl;
+    }
+
+    ofs.close();
+}
+
+bool LoadMasterFile(std::map<std::string, Movie *> &moviesByName, std::map<std::string, Movie *> &moviesById)
+{
+    std::ifstream file(MASTER_FILE);
+    if (!file.is_open())
+        return false;
+
+    std::cout << "Master file found, loading from master file..." << std::endl;
+
+    // Skip the first line
+    std::string line;
+    std::getline(file, line);
+    // File headings:
+    // tconst(0) name(1) year(2) avgrating(3) ratings(4) genres(5) languages(6) directors(7) actors(8) writers(9) directorids(10) actorids(11) writerids(12)
+    while (std::getline(file, line))
+    {
+        std::istringstream buffer(line);
+        std::string temp;
+        std::vector<std::string> values;
+
+        while (std::getline(buffer, temp, '\t'))
+            values.push_back(temp);
+
+        Movie *movie = new Movie();
+        movie->movieId = values[0];
+        movie->name = values[1];
+        movie->year = values[2];
+        movie->avgRating = stof(values[3]);
+        movie->ratings = stoi(values[4]);
+
+        for (int i = 5; i < 13; i++)
+        {
+            std::istringstream buffer(values[i]);
+            std::string bufferStr;
+            while (std::getline(buffer, bufferStr, ','))
+            {
+                if (bufferStr != "\\N")
+                {
+                    switch (i)
+                    {
+                    case 5:
+                        movie->genres.insert(bufferStr);
+                        break;
+                    case 6:
+                        movie->languages.insert(bufferStr);
+                        break;
+                    case 7:
+                        movie->directors.insert(bufferStr);
+                        break;
+                    case 8:
+                        movie->actors.insert(bufferStr);
+                        break;
+                    case 9:
+                        movie->writers.insert(bufferStr);
+                        break;
+                    case 10:
+                        movie->directorIds.insert(bufferStr);
+                        break;
+                    case 11:
+                        movie->actorIds.insert(bufferStr);
+                        break;
+                    case 12:
+                        movie->writerIds.insert(bufferStr);
+                        break;
+                    default:
+                        break;
+                    }
+                }
+            }
+        }
+
+        if (moviesByName.count(movie->getID()) != 0)
+        {
+            std::cout << "Potential conflict with title: " << movie->getID() << std::endl;
+
+            // Remove the old duplicate from the map
+            std::string oldId = moviesByName[movie->getID()]->movieId;
+            delete moviesById[oldId];
+            moviesById.erase(oldId);
+        }
+
+        moviesByName[movie->getID()] = movie;
+        moviesById[movie->movieId] = movie;
     }
 
     return true;
@@ -225,7 +360,13 @@ int main()
     // Stores a ID:NAME pair, so we can have fast lookups by both names and ID
     std::map<std::string, Movie *> moviesById;
 
+    bool masterFileUsed = false;
+
     auto startTime = std::chrono::high_resolution_clock::now();
+
+    if (masterFileUsed = LoadMasterFile(moviesByName, moviesById))
+        goto finished_loading;
+
     std::cout << "Loading database..." << std::endl;
     if (!LoadMovieBasics(moviesByName, moviesById))
     {
@@ -261,10 +402,28 @@ int main()
         return 1;
     }
 
+finished_loading:
     auto stopTime = std::chrono::high_resolution_clock::now();
     auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stopTime - startTime);
-    std::cout << "Loading time: " << duration.count() << "ms" << std::endl;
-    
+    std::cout << "Time elasped: " << duration.count() << "ms" << std::endl;
+
+    if (!masterFileUsed)
+    {
+        std::cout << "A master file can be created for faster loading times" << std::endl;
+        std::cout << "Would you like to create a master file? (y/n): ";
+
+        std::string answer; 
+
+        std::cin >> answer;
+
+        if((unsigned char)std::tolower(answer[0]) == 'y')
+        {
+            std::cout << "Saving to master file..." << std::endl;
+            MoviesToTsv(moviesById);
+        }
+        
+    }
+
     std::string title;
     std::string year;
 
